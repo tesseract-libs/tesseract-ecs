@@ -1,6 +1,6 @@
 # TesseractEcs
 
-**TODO: Add description**
+Simple entity-component system implemented in Elixir.
 
 ## Installation
 
