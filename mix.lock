@@ -1,0 +1,4 @@
+%{
+  "gproc": {:hex, :gproc, "0.6.1", "4579663e5677970758a05d8f65d13c3e9814ec707ad51d8dcef7294eda1a730c", [], [], "hexpm"},
+  "tesseract_ext": {:hex, :tesseract_ext, "0.1.1", "7f62f7b9ab4893b97c7d0d2f374c4cc3ce5177d54a5345a37dd7829e338345ac", [], [], "hexpm"},
+}
