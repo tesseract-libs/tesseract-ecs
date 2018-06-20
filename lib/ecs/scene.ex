@@ -35,7 +35,7 @@ defmodule Tesseract.ECS.Scene do
       |> Enum.into(%__MODULE__{})
       |> Map.put(:label, label)
 
-    {:ok, _} = GenServer.start_link(__MODULE__, params, name: via_tuple(label))
+    GenServer.start_link(__MODULE__, params, name: via_tuple(label))
   end
 
   # TODO: remove.
