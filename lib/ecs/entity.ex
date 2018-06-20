@@ -33,7 +33,7 @@ defmodule Tesseract.ECS.Entity do
   def start_link(label, params \\ []) do
     params = make_cfg(label, params)
     
-    {:ok, pid} = GenServer.start_link(__MODULE__, params, name: via_tuple(label))
+    GenServer.start_link(__MODULE__, params, name: via_tuple(label))
   end
 
   def get_state(label) do

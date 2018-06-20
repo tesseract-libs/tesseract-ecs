@@ -22,7 +22,7 @@ defmodule Tesseract.ECS.Scene do
     end)
   end
 
-  defp via_tuple(label) do
+  def via_tuple(label) do
     {:via, :gproc, {:n, :l, {:scene, label}}}
   end
 

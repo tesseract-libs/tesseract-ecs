@@ -2,12 +2,12 @@ defmodule Tesseract.ECS.System do
 
   @callback process_action(any, any, any) :: any
 
-  use Tesseract.Ext.MapLike, for: Tesseract.ECS.System
-
   defstruct label: nil,
             f: nil,
             actions: [],
             components: []
+
+  use Tesseract.Ext.MapLike, for: Tesseract.ECS.System
 
   def make(label, params \\ []) do
     params
