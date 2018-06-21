@@ -1,4 +1,4 @@
-# TesseractEcs
+# Tesseract/Ecs
 
 Simple entity-component system implemented in Elixir.
 

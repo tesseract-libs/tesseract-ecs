@@ -62,9 +62,18 @@ defmodule Tesseract.ECS.Entity do
       sys.components
       |> Enum.map(fn comp -> {comp, Map.fetch!(state.components, comp)} end)
       |> Enum.into(%{})
-      
-    sys_results = sys.f.process_action(action, components, state)
-    new_components = Map.merge(state.components, sys_results)
+
+    new_components = case sys.f.process_action(action, components, state) do
+      nil ->
+        state.components
+
+      %{} = updates ->
+        Map.merge(state.components, updates)
+
+      s ->
+        IO.inspect s
+        raise "Invalid state returned from system.."
+    end
 
     {:noreply, %{state | components: new_components}}
   end
