@@ -1,5 +1,6 @@
 defmodule Tesseract.ECS.Scene do
   alias Tesseract.ECS.{Entity, System}
+  alias Tesseract.Ext.EnumExt
 
   defstruct label: nil,
             game_id: nil,
@@ -10,18 +11,6 @@ defmodule Tesseract.ECS.Scene do
   use GenServer
   use Tesseract.Ext.MapLike, for: Tesseract.ECS.Scene
 
-  # TODO: move into EnumExt!!
-  def group_multiple_by(enum, keys_fn, value_fn \\ fn x -> x end) do
-    enum
-    |> Enum.reduce(%{}, fn (e, result) -> 
-      keys_fn.(e)
-      |> Enum.reduce(result, fn k, result -> 
-        group = result |> Map.get(k, [])
-        Map.put(result, k, [value_fn.(e) | group])
-      end)
-    end)
-  end
-
   def via_tuple(label) do
     {:via, :gproc, {:n, :l, {:scene, label}}}
   end
@@ -29,12 +18,21 @@ defmodule Tesseract.ECS.Scene do
   # =======================
   # == Client interface. ==
   # =======================
-  def start_link(label, params \\ []) do
-    params =
-      params
-      |> Enum.into(%__MODULE__{})
-      |> Map.put(:label, label)
 
+  def make(label, params \\ [])
+
+  def make(label, %__MODULE__{} = params) do
+    %{params | label: label}
+  end
+
+  def make(label, params) do
+    params
+    |> Enum.into(%__MODULE__{})
+    |> Map.put(:label, label)
+  end
+
+  def start_link(label, params \\ []) do
+    params = label |> make(params)
     GenServer.start_link(__MODULE__, params, name: via_tuple(label))
   end
 
@@ -111,7 +109,7 @@ defmodule Tesseract.ECS.Scene do
     sys_actions =  fn %System{} = sys -> sys.actions end
     sys_label = fn %System{} = sys -> sys.label end
 
-    multi_grouped = group_multiple_by(systems, sys_actions, sys_label)
+    multi_grouped = EnumExt.multigroup_by(systems, sys_actions, sys_label)
     %{state | systems_by_action: multi_grouped}
   end
 end
