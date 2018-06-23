@@ -40,6 +40,10 @@ defmodule Tesseract.ECS.Entity do
     GenServer.call(via_tuple(label), :get_state)
   end
 
+  def get_component(label, component) do
+    GenServer.call(via_tuple(label), {:get_component_state, component})
+  end
+
   def process(label, action, system) do
     GenServer.cast(via_tuple(label), {:process, action, system})
   end
@@ -55,6 +59,10 @@ defmodule Tesseract.ECS.Entity do
 
   def handle_call(:get_state, _from, %__MODULE__{} = state) do
     {:reply, state, state}
+  end
+
+  def handle_call({:get_component_state, component}, __from, %__MODULE__{components: components} = state) do
+    {:reply, Map.fetch(components, component), state}
   end
 
   def handle_cast({:process, action, %System{} = sys}, %__MODULE__{} = state) do
