@@ -6,6 +6,7 @@ defmodule Tesseract.ECS.Entity do
             components: %{}
 
   use Tesseract.Ext.MapLike, for: Tesseract.ECS.Entity
+  use Tesseract.Ext.MapAccess
   use GenServer
 
   def via_tuple(label) do
