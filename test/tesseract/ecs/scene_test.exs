@@ -88,8 +88,8 @@ defmodule Tesseract.ECS.SceneTest do
     {:ok, _} = Scene.start_link(label, scene_cfg)
   end
 
-  test "[ECS.Scene] Dispatches an action and a system to the addressed entity.",%{r_a: label, r_b: game_id} do
-    entity_cfg = %Entity{label: :rand.uniform(1000000), components: [health: 100]}
+  test "[ECS.Scene] Dispatches an action and a system to the addressed entity.", %{r_a: label, r_b: game_id} do
+    entity_cfg = Entity.make_cfg(make_ref(), [components: [health: 100]])
     health_sys = System.make(:health, [f: Health, components: [:health], actions: [:take_damage]])
 
     scene_cfg = [
@@ -113,5 +113,26 @@ defmodule Tesseract.ECS.SceneTest do
     entity_state = Entity.get_state(entity_cfg.label)
 
     assert 50 == entity_state.components[:health]
+  end
+
+  test "[ECS.Scene] Can add an entity." do
+    scene_ref = make_ref()
+    entity_cfg = %Entity{label: make_ref(), components: [health: 100]}
+    
+    {:ok, _} = Scene.start_link(scene_ref, Scene.make(scene_ref, [
+      game_id: make_ref(),
+      systems: [],
+      entities: [entity_cfg]
+    ]))
+
+    scene_entities = Scene.get_entities(scene_ref)
+    assert entity_cfg.label === (Map.fetch!(scene_entities, entity_cfg.label)).label
+
+    new_entity_cfg = Entity.make_cfg(label: make_ref(), components: [health: 90])
+    Scene.add_entity(scene_ref, new_entity_cfg)
+    
+    scene_entities = Scene.get_entities(scene_ref)
+    assert entity_cfg.label === (Map.fetch!(scene_entities, entity_cfg.label)).label
+    assert new_entity_cfg.label === (Map.fetch!(scene_entities, new_entity_cfg.label)).label
   end
 end

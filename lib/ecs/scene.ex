@@ -53,6 +53,10 @@ defmodule Tesseract.ECS.Scene do
     # TODO: broadcast.
   end
 
+  def add_entity(label, %Entity{} = entity_cfg) do
+    GenServer.cast(via_tuple(label), {:add_entity, entity_cfg})
+  end
+
   # =============
   # == Server. ==
   # =============
@@ -89,20 +93,24 @@ defmodule Tesseract.ECS.Scene do
     {:noreply, state}
   end
 
+  def handle_cast({:add_entity, %Entity{} = cfg}, %__MODULE__{} = state) do
+    {:noreply, cfg |> init_entity(state)}
+  end
+
   # TODO: refactor; dynamic supervisor!!
-  defp init_entities(%__MODULE__{game_id: game_id} = state) do
-    entities =
-      state.entities
-      |> Enum.reduce(%{}, fn %Entity{} = entity_cfg, entities -> 
-        entity_cfg = entity_cfg |> Map.put(:game_id, game_id)
-        entity_cfg = Entity.make_cfg(entity_cfg.label, entity_cfg)
+  defp init_entities(%__MODULE__{entities: entities} = state) do
+    clean_state = %{state | entities: %{}}
 
-        {:ok, _} = Entity.start_link(entity_cfg.label, entity_cfg)
+    entities
+    |> Enum.reduce(clean_state, &init_entity/2)
+  end
 
-        entities |> Map.put(entity_cfg.label, entity_cfg)
-      end)
+  defp init_entity(%Entity{} = entity_cfg, %__MODULE__{} = state) do
+    entity_cfg = entity_cfg |> Map.put(:game_id, state.game_id)
 
-    %{state | entities: entities}
+    {:ok, _} = Entity.start_link(entity_cfg.label, entity_cfg)
+
+    %{state | entities: state.entities |> Map.put(entity_cfg.label, entity_cfg)}
   end
 
   defp index_system_actions(%__MODULE__{systems: systems} = state) do
