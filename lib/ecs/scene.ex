@@ -106,7 +106,10 @@ defmodule Tesseract.ECS.Scene do
   end
 
   defp init_entity(%Entity{} = entity_cfg, %__MODULE__{} = state) do
-    entity_cfg = entity_cfg |> Map.put(:game_id, state.game_id)
+    entity_cfg = 
+      entity_cfg 
+      |> Map.put(:game_id, state.game_id)
+      |> Map.put(:scene_ref, state.label)
 
     {:ok, _} = Entity.start_link(entity_cfg.label, entity_cfg)
 

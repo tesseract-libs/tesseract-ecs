@@ -3,6 +3,7 @@ defmodule Tesseract.ECS.Entity do
 
   defstruct label: nil,
             game_id: nil,
+            scene_ref: nil,
             components: %{}
 
   use Tesseract.Ext.MapLike, for: Tesseract.ECS.Entity
