@@ -81,7 +81,17 @@ defmodule Tesseract.ECS.Scene do
     {:reply, entities, state}
   end
 
-  def handle_cast({:dispatch, receiver, {action_name, _, _} = action}, %__MODULE__{} = state) do
+  def handle_cast({:dispatch, receiver, action}, %__MODULE__{} = state) do
+    unicast(receiver, action, state)
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:add_entity, %Entity{} = cfg}, %__MODULE__{} = state) do
+    {:noreply, cfg |> init_entity(state)}
+  end
+
+  defp unicast(receiver, {action_name, _, _} = action, %__MODULE__{} = state) do
     receiver_entity = state.entities |> Map.fetch!(receiver)
     
     state.systems_by_action
@@ -89,12 +99,6 @@ defmodule Tesseract.ECS.Scene do
     |> Enum.map(&Enum.find(state.systems, nil, fn sys -> sys.label == &1 end))
     |> Enum.filter(fn sys -> Entity.has_components?(receiver_entity, sys.components) end)
     |> Enum.each(&Entity.process(receiver, action, &1))
-
-    {:noreply, state}
-  end
-
-  def handle_cast({:add_entity, %Entity{} = cfg}, %__MODULE__{} = state) do
-    {:noreply, cfg |> init_entity(state)}
   end
 
   # TODO: refactor; dynamic supervisor!!
@@ -113,7 +117,11 @@ defmodule Tesseract.ECS.Scene do
 
     {:ok, _} = Entity.start_link(entity_cfg.label, entity_cfg)
 
-    %{state | entities: state.entities |> Map.put(entity_cfg.label, entity_cfg)}
+    state = %{state | entities: state.entities |> Map.put(entity_cfg.label, entity_cfg)}
+
+    unicast(entity_cfg.label, {:spawn, nil, nil}, state)
+
+    state
   end
 
   defp index_system_actions(%__MODULE__{systems: systems} = state) do
