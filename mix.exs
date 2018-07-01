@@ -4,7 +4,7 @@ defmodule TesseractEcs.MixProject do
   def project do
     [
       app: :tesseract_ecs,
-      version: "0.1.8",
+      version: "0.2.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -24,7 +24,7 @@ defmodule TesseractEcs.MixProject do
   defp deps do
     [
       {:gproc, "~> 0.6.1"},
-      {:tesseract_ext, "~> 0.1.2"},
+      {:tesseract_ext, "~> 0.1.3"},
       {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
