@@ -18,11 +18,11 @@ defmodule Tesseract.ECS.Entity do
     ec = MapSet.new(Map.keys(ec))
     cc = MapSet.new(cc)
 
-    cc |> MapSet.subset?(ec) 
+    cc |> MapSet.subset?(ec)
   end
 
   def normalize_cfg(%__MODULE__{} = cfg) do
-    %{cfg | components:  Enum.into(cfg.components, %{})}
+    %{cfg | components: Enum.into(cfg.components, %{})}
   end
 
   def make_cfg(label, params \\ []) do
@@ -34,7 +34,7 @@ defmodule Tesseract.ECS.Entity do
 
   def start_link(label, params \\ []) do
     params = make_cfg(label, params)
-    
+
     GenServer.start_link(__MODULE__, params, name: via_tuple(label))
   end
 
@@ -54,8 +54,6 @@ defmodule Tesseract.ECS.Entity do
   # == Server implementation. ==
   # ============================
   def init(%__MODULE__{} = state) do
-    # :gproc.reg(prop_game_entity(state.game_id), state.label)
-    
     {:ok, state}
   end
 
@@ -63,7 +61,11 @@ defmodule Tesseract.ECS.Entity do
     {:reply, state, state}
   end
 
-  def handle_call({:get_component_state, component}, __from, %__MODULE__{components: components} = state) do
+  def handle_call(
+        {:get_component_state, component},
+        __from,
+        %__MODULE__{components: components} = state
+      ) do
     {:reply, Map.fetch(components, component), state}
   end
 
@@ -73,17 +75,18 @@ defmodule Tesseract.ECS.Entity do
       |> Enum.map(fn comp -> {comp, Map.fetch!(state.components, comp)} end)
       |> Enum.into(%{})
 
-    new_components = case sys.f.process_action(action, components, state) do
-      nil ->
-        state.components
+    new_components =
+      case sys.f.process_action(action, components, state) do
+        nil ->
+          state.components
 
-      %{} = updates ->
-        Map.merge(state.components, updates)
+        %{} = updates ->
+          Map.merge(state.components, updates)
 
-      s ->
-        IO.inspect s
-        raise "Invalid state returned from system.."
-    end
+        s ->
+          IO.inspect(s)
+          raise "Invalid state returned from system.."
+      end
 
     {:noreply, %{state | components: new_components}}
   end

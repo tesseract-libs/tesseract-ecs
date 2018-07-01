@@ -1,25 +1,25 @@
 defmodule Tesseract.ECS.EntityTest do
-    alias Tesseract.ECS.Entity
-    
-    use ExUnit.Case, async: true
+  alias Tesseract.ECS.Entity
 
-    setup do
-        {:ok, %{label: :rand.uniform(1000000)}}
-    end
+  use ExUnit.Case, async: true
 
-    test "[ECS.Entity] Correctly initializes.", %{label: label} do
-        {:ok, _} = Entity.start_link(label, [game_id: :rand.uniform(1000000), components: []])
-    end
+  setup do
+    {:ok, %{label: :rand.uniform(1_000_000)}}
+  end
 
-    test "[ECS.Entity] Accepts a list of components.", %{label: label} do
-        entity_cfg = [
-            components: [
-                health: 100,
-                weapon: %{type: :sword}
-            ],
-            game_id: :rand.uniform(100000000)
-        ]
+  test "[ECS.Entity] Correctly initializes.", %{label: label} do
+    {:ok, _} = Entity.start_link(label, game_id: :rand.uniform(1_000_000), components: [])
+  end
 
-        {:ok, _} = Entity.start_link(label, entity_cfg)
-    end
+  test "[ECS.Entity] Accepts a list of components.", %{label: label} do
+    entity_cfg = [
+      components: [
+        health: 100,
+        weapon: %{type: :sword}
+      ],
+      game_id: :rand.uniform(100_000_000)
+    ]
+
+    {:ok, _} = Entity.start_link(label, entity_cfg)
+  end
 end

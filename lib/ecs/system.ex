@@ -1,5 +1,4 @@
 defmodule Tesseract.ECS.System do
-
   @callback process_action(any, any, any) :: any
 
   defstruct label: nil,

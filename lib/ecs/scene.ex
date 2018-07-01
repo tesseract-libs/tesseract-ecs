@@ -1,5 +1,6 @@
 defmodule Tesseract.ECS.Scene do
   alias Tesseract.ECS.{Entity, System}
+  alias Tesseract.ECS.Entity.Supervisor, as: EntitySupervisor
   alias Tesseract.Ext.EnumExt
 
   defstruct label: nil,
@@ -10,6 +11,7 @@ defmodule Tesseract.ECS.Scene do
 
   use GenServer
   use Tesseract.Ext.MapLike, for: Tesseract.ECS.Scene
+  use Tesseract.Ext.MapAccess
 
   def via_tuple(label) do
     {:via, :gproc, {:n, :l, {:scene, label}}}
@@ -31,9 +33,14 @@ defmodule Tesseract.ECS.Scene do
     |> Map.put(:label, label)
   end
 
-  def start_link(label, params \\ []) do
-    params = label |> make(params)
-    GenServer.start_link(__MODULE__, params, name: via_tuple(label))
+  def start_link(params \\ []) do
+    if params[:label] === nil do
+      raise "label needs to be set."
+    end
+
+    params = params[:label] |> make(params)
+
+    GenServer.start_link(__MODULE__, params, name: via_tuple(params[:label]))
   end
 
   # TODO: remove.
@@ -49,9 +56,9 @@ defmodule Tesseract.ECS.Scene do
     GenServer.cast(via_tuple(label), {:dispatch, receiver, action})
   end
 
-  def dispatch(label, {_, _, _} = action) do
-    # TODO: broadcast.
-  end
+  # def dispatch(label, {_, _, _} = action) do
+  #   # TODO: broadcast.
+  # end
 
   def add_entity(label, %Entity{} = entity_cfg) do
     GenServer.cast(via_tuple(label), {:add_entity, entity_cfg})
@@ -61,8 +68,8 @@ defmodule Tesseract.ECS.Scene do
   # == Server. ==
   # =============
   def init(%__MODULE__{} = state) do
-    state = 
-      state  
+    state =
+      state
       |> init_entities
       |> index_system_actions()
 
@@ -93,7 +100,7 @@ defmodule Tesseract.ECS.Scene do
 
   defp unicast(receiver, {action_name, _, _} = action, %__MODULE__{} = state) do
     receiver_entity = state.entities |> Map.fetch!(receiver)
-    
+
     state.systems_by_action
     |> Map.get(action_name, [])
     |> Enum.map(&Enum.find(state.systems, nil, fn sys -> sys.label == &1 end))
@@ -110,22 +117,17 @@ defmodule Tesseract.ECS.Scene do
   end
 
   defp init_entity(%Entity{} = entity_cfg, %__MODULE__{} = state) do
-    entity_cfg = 
-      entity_cfg 
-      |> Map.put(:game_id, state.game_id)
-      |> Map.put(:scene_ref, state.label)
-
-    {:ok, _} = Entity.start_link(entity_cfg.label, entity_cfg)
-
+    entity_cfg = entity_cfg |> Map.put(:game_id, state.game_id)
     state = %{state | entities: state.entities |> Map.put(entity_cfg.label, entity_cfg)}
 
+    {:ok, _} = EntitySupervisor.start_child(state.label, entity_cfg)
     unicast(entity_cfg.label, {:spawn, nil, nil}, state)
 
     state
   end
 
   defp index_system_actions(%__MODULE__{systems: systems} = state) do
-    sys_actions =  fn %System{} = sys -> sys.actions end
+    sys_actions = fn %System{} = sys -> sys.actions end
     sys_label = fn %System{} = sys -> sys.label end
 
     multi_grouped = EnumExt.multigroup_by(systems, sys_actions, sys_label)

@@ -2,7 +2,7 @@
 #   alias Tesseract.ECS.System
 #   alias Tesseract.ECS.Entity
 #   alias Tesseract.ECS.Component
-  
+
 #   use ExUnit.Case, async: true
 
 #   setup do
