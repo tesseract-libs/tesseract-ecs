@@ -4,7 +4,6 @@ defmodule Tesseract.ECS.Scene do
   alias Tesseract.Ext.EnumExt
 
   defstruct label: nil,
-            game_id: nil,
             systems: [],
             entities: %{},
             systems_by_action: %{}
@@ -21,24 +20,22 @@ defmodule Tesseract.ECS.Scene do
   # == Client interface. ==
   # =======================
 
-  def make(label, params \\ [])
+  def make_cfg(label, params \\ [])
 
-  def make(label, %__MODULE__{} = params) do
+  def make_cfg(nil, _), do: raise("Label needs to be set.")
+
+  def make_cfg(label, %__MODULE__{} = params) do
     %{params | label: label}
   end
 
-  def make(label, params) do
+  def make_cfg(label, params) do
     params
     |> Enum.into(%__MODULE__{})
     |> Map.put(:label, label)
   end
 
   def start_link(params \\ []) do
-    if params[:label] === nil do
-      raise "label needs to be set."
-    end
-
-    params = params[:label] |> make(params)
+    params = params[:label] |> make_cfg(params)
 
     GenServer.start_link(__MODULE__, params, name: via_tuple(params[:label]))
   end
@@ -115,7 +112,6 @@ defmodule Tesseract.ECS.Scene do
   end
 
   defp init_entity(%Entity{} = entity_cfg, %__MODULE__{} = state) do
-    entity_cfg = entity_cfg |> Map.put(:game_id, state.game_id)
     state = %{state | entities: state.entities |> Map.put(entity_cfg.label, entity_cfg)}
 
     {:ok, _} = EntitySupervisor.start_child(state.label, entity_cfg)

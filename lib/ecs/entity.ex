@@ -2,7 +2,6 @@ defmodule Tesseract.ECS.Entity do
   alias Tesseract.ECS.System
 
   defstruct label: nil,
-            game_id: nil,
             scene_ref: nil,
             components: %{}
 
@@ -25,17 +24,25 @@ defmodule Tesseract.ECS.Entity do
     %{cfg | components: Enum.into(cfg.components, %{})}
   end
 
-  def make_cfg(label, params \\ []) do
+  def make_cfg(label, params \\ [])
+
+  def make_cfg(nil, _), do: raise("Label needs to be set.")
+
+  def make_cfg(label, %__MODULE__{} = params) do
+    %{params | label: label} |> normalize_cfg()
+  end
+
+  def make_cfg(label, params) do
     params
     |> Enum.into(%__MODULE__{})
     |> Map.put(:label, label)
     |> normalize_cfg()
   end
 
-  def start_link(label, params \\ []) do
-    params = make_cfg(label, params)
+  def start_link(params \\ []) do
+    params = params[:label] |> make_cfg(params)
 
-    GenServer.start_link(__MODULE__, params, name: via_tuple(label))
+    GenServer.start_link(__MODULE__, params, name: via_tuple(params[:label]))
   end
 
   def get_state(label) do

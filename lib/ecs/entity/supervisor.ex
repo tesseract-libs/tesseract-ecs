@@ -14,10 +14,7 @@ defmodule Tesseract.ECS.Entity.Supervisor do
   def start_child(scene_ref, %Entity{} = entity_cfg) do
     entity_cfg = entity_cfg |> Map.put(:scene_ref, scene_ref)
 
-    spec = %{
-      id: entity_cfg.label,
-      start: {Entity, :start_link, [entity_cfg.label, entity_cfg]}
-    }
+    spec = Supervisor.child_spec({Entity, entity_cfg}, id: entity_cfg.label)
 
     DynamicSupervisor.start_child(via_tuple(scene_ref), spec)
   end
