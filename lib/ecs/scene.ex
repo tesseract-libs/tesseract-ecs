@@ -70,8 +70,8 @@ defmodule Tesseract.ECS.Scene do
   def init(%__MODULE__{} = state) do
     state =
       state
-      |> init_entities
       |> index_system_actions()
+      |> init_entities
 
     {:ok, state}
   end
@@ -105,15 +105,13 @@ defmodule Tesseract.ECS.Scene do
     |> Map.get(action_name, [])
     |> Enum.map(&Enum.find(state.systems, nil, fn sys -> sys.label == &1 end))
     |> Enum.filter(fn sys -> Entity.has_components?(receiver_entity, sys.components) end)
-    |> Enum.each(&Entity.process(receiver, action, &1))
+    |> Enum.each(&(:ok = Entity.process(receiver, action, &1)))
   end
 
-  # TODO: refactor; dynamic supervisor!!
   defp init_entities(%__MODULE__{entities: entities} = state) do
     clean_state = %{state | entities: %{}}
 
-    entities
-    |> Enum.reduce(clean_state, &init_entity/2)
+    entities |> Enum.reduce(clean_state, &init_entity/2)
   end
 
   defp init_entity(%Entity{} = entity_cfg, %__MODULE__{} = state) do

@@ -13,6 +13,22 @@ defmodule Tesseract.ECS.SceneTest do
     end
   end
 
+  defmodule SpawnSys do
+    @behaviour Tesseract.ECS.System
+
+    def make() do
+      System.make(make_ref(), [
+        f: __MODULE__,
+        actions: [:spawn],
+        components: [:spawnable]
+      ])
+    end
+
+    def process_action({:spawn, _, _}, components, _) do
+      components
+    end
+  end
+
   setup do
     {:ok,
      %{
@@ -162,5 +178,37 @@ defmodule Tesseract.ECS.SceneTest do
     scene_entities = Scene.get_entities(scene_ref)
     assert entity_cfg.label === Map.fetch!(scene_entities, entity_cfg.label).label
     assert new_entity_cfg.label === Map.fetch!(scene_entities, new_entity_cfg.label).label
+  end
+
+  @tag :incomplete
+  test "[ECS.Scene] {:spawn, _, _} action is dispatched to a newly started entity." do
+    scene_ref = make_ref()
+    game_id = make_ref()
+
+    entity_cfg = Entity.make_cfg(make_ref(), [
+      label: make_ref(),
+      components: [
+        spawnable: true
+      ]
+    ])
+
+    scene_cfg = Scene.make(scene_ref, [
+      systems: [SpawnSys.make()],
+      game_id: game_id
+    ])
+
+    {:ok, _} = SceneSupervisor.start_link(scene_cfg)
+
+    :ok = Scene.add_entity(scene_ref, entity_cfg)
+
+    assert 1 === Enum.count(Scene.get_entities(scene_ref))
+
+    # Can't, because message is sent immediately after entity is spawned, and we're too late.
+    # Process.sleep(1)
+    # {:via, _, entity_via} = Entity.via_tuple(entity_cfg.label)
+    # entity_pid = :gproc.where(entity_via)
+    # assert entity_pid !== :undefined
+    # :erlang.trace(entity_pid, true, [:receive])
+    # assert_receive {:trace, ^entity_pid, :receive, {_, {:process, {:spawn, _, _}, _}}}
   end
 end
