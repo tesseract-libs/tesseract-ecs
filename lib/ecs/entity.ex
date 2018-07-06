@@ -1,7 +1,7 @@
 defmodule Tesseract.ECS.Entity do
   alias Tesseract.ECS.System
 
-  defstruct label: nil,
+  defstruct ref: nil,
             scene_ref: nil,
             components: %{}
 
@@ -9,8 +9,33 @@ defmodule Tesseract.ECS.Entity do
   use Tesseract.Ext.MapAccess
   use GenServer
 
-  def via_tuple(label) do
-    {:via, :gproc, {:n, :l, {:entity, label}}}
+  def via(%__MODULE__{} = cfg) do
+    via(label(cfg))
+  end
+
+  def via({scene_ref, entity_ref}) do
+    {:via, Registry, {{:entity_reg, scene_ref}, entity_ref}}
+  end
+
+  def label(%__MODULE__{ref: ref, scene_ref: scene_ref}) do
+    {scene_ref, ref}
+  end
+
+  def make_cfg(params) do
+    params
+    |> Enum.into(%__MODULE__{})
+    |> Map.put(:ref, make_ref())
+    |> normalize_cfg()
+  end
+
+  defp normalize_cfg(%__MODULE__{} = cfg) do
+    %{cfg | components: Enum.into(cfg.components, %{})}
+  end
+
+  def start_link(params \\ []) do
+    params = make_cfg(params)
+
+    GenServer.start_link(__MODULE__, params, name: via(params))
   end
 
   def has_components?(%__MODULE__{components: %{} = ec}, cc) do
@@ -20,42 +45,28 @@ defmodule Tesseract.ECS.Entity do
     cc |> MapSet.subset?(ec)
   end
 
-  def normalize_cfg(%__MODULE__{} = cfg) do
-    %{cfg | components: Enum.into(cfg.components, %{})}
-  end
-
-  def make_cfg(label, params \\ [])
-
-  def make_cfg(nil, _), do: raise("Label needs to be set.")
-
-  def make_cfg(label, %__MODULE__{} = params) do
-    %{params | label: label} |> normalize_cfg()
-  end
-
-  def make_cfg(label, params) do
-    params
-    |> Enum.into(%__MODULE__{})
-    |> Map.put(:label, label)
-    |> normalize_cfg()
-  end
-
-  def start_link(params \\ []) do
-    params = params[:label] |> make_cfg(params)
-
-    GenServer.start_link(__MODULE__, params, name: via_tuple(params[:label]))
-  end
-
   def get_state(label) do
-    GenServer.call(via_tuple(label), :get_state)
+    GenServer.call(via(label), :get_state)
   end
 
   def get_component(label, component) do
-    GenServer.call(via_tuple(label), {:get_component_state, component})
+    GenServer.call(via(label), {:get_component_state, component})
   end
 
   def process(label, action, system) do
-    GenServer.cast(via_tuple(label), {:process, action, system})
+    GenServer.cast(via(label), {:process, action, system})
   end
+
+
+  def get_component_state(%__MODULE__{components: components}, component) do
+    components |> Map.fetch(components, component)
+  end
+
+  def process() do
+
+  end
+
+
 
   # ============================
   # == Server implementation. ==
