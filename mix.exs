@@ -42,7 +42,7 @@ defmodule TesseractEcs.MixProject do
         "github" => "https://github.com/tesseract-libs/tesseract-ecs",
         "tesseract.games" => "http://tesseract.games"
       },
-      organization: "tesseract",
+      # organization: "tesseract",
       files: ["lib", "test", "config", "mix.exs", "README*", "LICENSE*"]
     ]
   end
