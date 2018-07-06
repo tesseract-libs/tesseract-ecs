@@ -15,15 +15,16 @@ defmodule Tesseract.ECS.Scene.Supervisor do
   def init(%Scene{} = scene_cfg) do
     scene_ref = scene_cfg.label
 
-    const_children = [
-      Supervisor.child_spec({Tesseract.ECS.Entity.Supervisor, scene_ref}, type: :supervisor),
-      {Tesseract.ECS.Scene, scene_cfg}
-    ]
-
     system_children =
       scene_cfg[:systems]
       |> Enum.flat_map(fn %System{} = sys -> sys.f.init_specs(scene_cfg.label) end)
 
-    Supervisor.init(const_children ++ system_children, strategy: :rest_for_one)
+    children = 
+      system_children ++ [
+        Supervisor.child_spec({Tesseract.ECS.Entity.Supervisor, scene_ref}, type: :supervisor),
+        {Tesseract.ECS.Scene, scene_cfg}
+      ]
+
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
