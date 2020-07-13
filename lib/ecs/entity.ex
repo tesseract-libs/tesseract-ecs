@@ -1,7 +1,7 @@
 defmodule Tesseract.ECS.Entity do
   alias Tesseract.ECS.System
 
-  defstruct label: nil,
+  defstruct ref: nil,
             scene_ref: nil,
             components: %{}
 
@@ -13,11 +13,9 @@ defmodule Tesseract.ECS.Entity do
     {:via, :gproc, {:n, :l, {:entity, label}}}
   end
 
-  def has_components?(%__MODULE__{components: %{} = ec}, cc) do
-    ec = MapSet.new(Map.keys(ec))
-    cc = MapSet.new(cc)
-
-    cc |> MapSet.subset?(ec)
+  def has_components?(%__MODULE__{components: %{} = entity_components}, required_components) do
+    entity_components = MapSet.new(Map.keys(entity_components))
+    MapSet.new(required_components) |> MapSet.subset?(entity_components)
   end
 
   def normalize_cfg(%__MODULE__{} = cfg) do
@@ -97,4 +95,14 @@ defmodule Tesseract.ECS.Entity do
 
     {:noreply, %{state | components: new_components}}
   end
+
+  defp notify_component_changed({component, prev_value, new_value}) do
+    msg = {:component_updated, component, {prev_value, new_value}}
+
+    
+  end
+
+  # defp register_component_listener({component, value}) do
+    
+  # end
 end
